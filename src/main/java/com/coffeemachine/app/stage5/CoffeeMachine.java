@@ -1,4 +1,4 @@
-package com.coffeemachine.app.stage4;
+package com.coffeemachine.app.stage5;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -83,6 +83,7 @@ public class CoffeeMachine {
     }
 
     private void printCoffeeInventory() {
+        System.out.println();
         System.out.println("The coffee machine has:");
         for (Map.Entry<String, Integer> resource : inventory.entrySet()) {
             if (resource.getKey().equals("disposable cups")) break;
@@ -93,6 +94,7 @@ public class CoffeeMachine {
         }
         System.out.printf("%d disposable cups\n", inventory.get("disposable cups"));
         System.out.printf("$%d of money\n", inventory.get("money"));
+        System.out.println();
     }
 
     private static String getInput() {
@@ -130,6 +132,9 @@ public class CoffeeMachine {
         int price = 0;
         int disposableCups = inventory.get("disposable cups");
 
+        boolean back = false; // Go back, don't buy anything nor update the inventory
+        boolean sufficientResources = false;
+
         switch (getInput()) {
             case "1" -> {
                 price = MenuItems.ESPRESSO.getPrice();
@@ -150,14 +155,30 @@ public class CoffeeMachine {
                 beansQuantity -= MenuItems.CAPPUCCINO.getBeansReq();
             }
             case "back" -> {
-
+                back = true;
             }
         }
-        inventory.put("water", waterQuantity);
-        inventory.put("milk", milkQuantity);
-        inventory.put("coffee beans", beansQuantity);
-        inventory.put("money", money + price);
-        inventory.put("disposable cups", disposableCups - 1);
+
+        if (waterQuantity < 0) {
+            System.out.print("Sorry, not enough water!\n");
+        } else if (milkQuantity < 0) {
+            System.out.print("Sorry, not enough milk!\n");
+        } else if (beansQuantity < 0) {
+            System.out.print("Sorry, not enough coffee beans!\n");
+        } else if (disposableCups < 0) {
+            System.out.print("Sorry, not enough disposable cups!\n");
+        } else {
+            System.out.print("I have enough resources, making you a coffee!\n");
+            sufficientResources = true;
+        }
+
+        if (!back && sufficientResources) {
+            inventory.put("water", waterQuantity);
+            inventory.put("milk", milkQuantity);
+            inventory.put("coffee beans", beansQuantity);
+            inventory.put("money", money + price);
+            inventory.put("disposable cups", disposableCups - 1);
+        }
     }
 
     private int selectAction() {
@@ -180,7 +201,6 @@ public class CoffeeMachine {
             int val = selectAction();
             if (val == 0) break;
         }
-
     }
 
     public static void main(String[] args) {
