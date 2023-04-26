@@ -1,0 +1,189 @@
+package com.coffeemachine.app.stage4;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Scanner;
+
+enum Resources {
+    WATER("water", 400, "ml"),
+    MILK("milk", 540, "ml"),
+    BEANS("coffee beans", 120, "g"),
+    CUPS("disposable cups", 9, null),
+    MONEY("money", 550, "$");
+    private final String name;
+    private final int amount;
+    private final String unit;
+
+    Resources(String name, int amount, String unit) {
+        this.name = name;
+        this.amount = amount;
+        this.unit = unit;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public int getAmount() {
+        return amount;
+    }
+}
+
+enum MenuItems {
+    ESPRESSO(4, 250, 0, 16),
+    LATTE(7, 350, 75, 20),
+    CAPPUCCINO(6, 200, 100, 12);
+
+    private final int price;
+    private final int waterReq;
+    private final int milkReq;
+    private final int beansReq;
+
+    MenuItems(int price, int waterReq, int milkReq, int beansReq) {
+        this.price = price; // $
+        this.waterReq = waterReq; // ml
+        this.milkReq = milkReq; // ml
+        this.beansReq = beansReq; // g
+    }
+
+    public int getPrice() {
+        return price;
+    }
+
+    public int getWaterReq() {
+        return waterReq;
+    }
+
+    public int getMilkReq() {
+        return milkReq;
+    }
+
+    public int getBeansReq() {
+        return beansReq;
+    }
+}
+
+public class CoffeeMachine {
+    private final Map<String, Integer> inventory;
+
+    public CoffeeMachine() {
+        this.inventory = getInventory();
+    }
+
+    public static Map<String, Integer> getInventory() {
+        Map<String, Integer> inventory = new LinkedHashMap<>();
+        for (Resources resource : Resources.values()) {
+            inventory.put(resource.getName(), resource.getAmount());
+        }
+        return inventory;
+    }
+
+    private void printCoffeeInventory() {
+        System.out.println("The coffee machine has:");
+        for (Map.Entry<String, Integer> resource : inventory.entrySet()) {
+            if (resource.getKey().equals("disposable cups")) break;
+            var name = resource.getKey();
+            var amount = resource.getValue();
+            var unit = (name.equals("coffee beans")) ? "g" : Resources.valueOf(name.toUpperCase()).getUnit();
+            System.out.printf("%d %s of %s\n", amount, unit, name);
+        }
+        System.out.printf("%d disposable cups\n", inventory.get("disposable cups"));
+        System.out.printf("$%d of money\n", inventory.get("money"));
+    }
+
+    private static String getActionInput() {
+        Scanner scanner = new Scanner(System.in);
+        return scanner.nextLine();
+    }
+
+    private static int getBuyInput() {
+        Scanner scanner = new Scanner(System.in);
+        return scanner.nextInt();
+    }
+
+    private void take() {
+        System.out.printf("I gave you $%d\n", inventory.get("money"));
+        inventory.put("money", 0);
+    }
+
+    private void fill() {
+        Scanner scanner = new Scanner(System.in);
+        for (Map.Entry<String, Integer> resource : inventory.entrySet()) {
+            var name = resource.getKey();
+            if (name.equals("money")) break;
+            var unit = (name.equals("coffee beans")) ? "grams" :
+                    (name.equals("disposable cups")) ? "disposable cups" :
+                            Resources.valueOf(resource.getKey().toUpperCase()).getUnit();
+            var resourceAmount = resource.getValue();
+
+            System.out.printf("Write how many %s of %s you want to add:\n", unit, name);
+            int amountToAdd = scanner.nextInt();
+            inventory.put(name, resourceAmount + amountToAdd);
+        }
+    }
+
+    public void buy() {
+        System.out.print("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino:\n");
+        int waterQuantity = inventory.get("water");
+        int milkQuantity = inventory.get("milk");
+        int beansQuantity = inventory.get("coffee beans");
+        int money = inventory.get("money");
+        int price = 0;
+        int disposableCups = inventory.get("disposable cups");
+
+        switch (getBuyInput()) {
+            case 1 -> {
+                price = MenuItems.ESPRESSO.getPrice();
+                waterQuantity -= MenuItems.ESPRESSO.getWaterReq();
+                milkQuantity -= MenuItems.ESPRESSO.getMilkReq();
+                beansQuantity -= MenuItems.ESPRESSO.getBeansReq();
+            }
+            case 2 -> {
+                price = MenuItems.LATTE.getPrice();
+                waterQuantity -= MenuItems.LATTE.getWaterReq();
+                milkQuantity -= MenuItems.LATTE.getMilkReq();
+                beansQuantity -= MenuItems.LATTE.getBeansReq();
+            }
+            case 3 -> {
+                price = MenuItems.CAPPUCCINO.getPrice();
+                waterQuantity -= MenuItems.CAPPUCCINO.getWaterReq();
+                milkQuantity -= MenuItems.CAPPUCCINO.getMilkReq();
+                beansQuantity -= MenuItems.CAPPUCCINO.getBeansReq();
+            }
+        }
+        inventory.put("water", waterQuantity);
+        inventory.put("milk", milkQuantity);
+        inventory.put("coffee beans", beansQuantity);
+        inventory.put("money", money + price);
+        inventory.put("disposable cups", disposableCups - 1);
+    }
+
+    private void selectAction() {
+        System.out.print("Write action (buy, fill, take):\n");
+        switch (getActionInput()) {
+            case "buy" -> buy();
+            case "fill" -> fill();
+            case "take" -> take();
+            default -> throw new IllegalStateException("Unexpected value: " + getActionInput());
+        }
+    }
+
+    public void run() {
+        printCoffeeInventory();
+
+        System.out.println();
+        selectAction();
+        System.out.println();
+
+        printCoffeeInventory();
+    }
+
+    public static void main(String[] args) {
+        CoffeeMachine coffeeMachine = new CoffeeMachine();
+        coffeeMachine.run();
+    }
+}
